@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un mensaje para Bren</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#fbeee6; --bg2:#f3d9d0; --ink:#3b2a2a; --soft:#8a6b66; --accent:#c4574b; --card:#fffaf6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'DM Sans',system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(circle at 20% 10%,#fff6ef 0,var(--bg1) 40%,var(--bg2) 100%);
+    display:flex;align-items:center;justify-content:center;padding:24px;min-height:100vh;overflow-x:hidden;
+  }
+  .wind{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+  .wind span{position:absolute;height:1.5px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(196,87,75,.35),transparent);
+    animation:breeze linear infinite;opacity:0}
+  @keyframes breeze{0%{transform:translateX(-30vw);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translateX(130vw);opacity:0}}
+  .card{
+    position:relative;z-index:1;width:100%;max-width:520px;background:var(--card);border-radius:28px;
+    padding:44px 36px 32px;box-shadow:0 30px 60px -25px rgba(120,60,50,.35),0 2px 0 rgba(255,255,255,.8) inset;text-align:center;
+  }
+  .top{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--soft);display:flex;justify-content:space-between}
+  .heart{width:34px;height:34px;margin:26px auto 18px;color:var(--accent);animation:beat 2.4s ease-in-out infinite}
+  @keyframes beat{0%,100%{transform:scale(1)}12%{transform:scale(1.15)}24%{transform:scale(1)}36%{transform:scale(1.1)}}
+  .msg{font-family:'Fraunces',serif;font-size:clamp(22px,5.4vw,28px);line-height:1.38;font-weight:400;min-height:5.6em;
+    display:flex;align-items:center;justify-content:center;transition:opacity .35s ease,transform .35s ease}
+  .msg.fade{opacity:0;transform:translateY(6px)}
+  .sign{font-family:'Fraunces',serif;font-style:italic;color:var(--accent);margin-top:22px;font-size:18px}
+  .date{margin-top:26px;font-size:14px;color:var(--soft)}
+  .bar{height:4px;background:#f1e1da;border-radius:4px;margin:14px auto 0;max-width:260px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent);border-radius:4px;transition:width .5s}
+  .nav{display:flex;justify-content:center;gap:10px;margin-top:24px}
+  .nav button{font:inherit;font-size:14px;border:1px solid #ead2c9;background:transparent;color:var(--ink);padding:9px 16px;border-radius:999px;cursor:pointer;transition:background .2s}
+  .nav button:hover:not(:disabled){background:#f7e6df}
+  .nav button:disabled{opacity:.35;cursor:default}
+  .countdown{margin-top:16px;font-size:12.5px;color:var(--soft)}
+</style>
+</head>
+<body>
+<div class="wind" id="wind"></div>
+<main class="card">
+  <div class="top"><span id="dayNum">Día 1</span><span>de 365</span></div>
+  <svg class="heart" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-10-9.3C.3 8.3 2.3 4.5 6 4.5c2.1 0 3.4 1.1 4 2.1.6-1 1.9-2.1 4-2.1 3.7 0 5.7 3.8 4 7.2C19.5 16.4 12 21 12 21z"/></svg>
+  <p class="msg" id="msg"></p>
+  <p class="sign">— Cris</p>
+  <p class="date" id="date"></p>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="nav">
+    <button id="prev" aria-label="Mensaje anterior">← Anterior</button>
+    <button id="today">Hoy</button>
+    <button id="next" aria-label="Mensaje siguiente">Siguiente →</button>
+  </div>
+  <p class="countdown" id="countdown"></p>
+</main>
+<script>
+// ====== CONFIGURACIÓN ======
+// Día en que empieza el mensaje 1 (año, mes-1, día)
+const INICIO = new Date(2026, 10, 16);
+// Mensajes especiales por fecha (MM-DD). Reemplazan al mensaje normal ese día.
+const ESPECIALES = {
+ 
+};
+// Los 365 mensajes, en orden
+const MENSAJES = [
+ "Noah le escribio 365 cartas a Alie, yo te escribo 365 mensajes con codigo jaja, te amoo, me haces muy feliz, beshito.",
+ "Entre Lima e Italia hay un muchos kilometros, pero hoy te siento más cerca que nunca ti.",
+ "Que tengas un día tan bonito como tu sonrisa cuando me hablas por llamada.",
+ "Cuando tú te vas a dormir, yo todavía estoy en mi día pensando en ti. Así de presente estás.",
+ "Brenchi: dos nombres que se juntaron y quedaron perfectos. Como nosotros.",
+ "Hoy quiero que sepas algo simple: me haces feliz.",
+ "Seis horas de diferencia y aun así siempre llegas en el momento justo.",
+ "Si hoy el día se pone pesado, acuérdate de que alguien en Perú está orgulloso de ti jeje.",
+ "No sé qué hice para que aparecieras, pero gracias a la vida por eso, te amo.",
+ "Hoy cumplimos 1 mes, quiero decirte que si sigo a tu lado, sigo siendo feliz en cada momento del dia.",
+ "Hoy te mando un abrazo que cruza todo el Atlántico. Recíbelo bien p.",
+ "Me gusta cómo eres: tus ideas, tus risas, tus silencios. Todoooooo.",
+ "Estudia con ganas hoy, que yo te espero con todo el cariño del mundo al otro lado.",
+ "Eres esa persona que hace que un día normal se sienta especial, beshitoo.",
+ "Si pudiera, hoy te llevaría un chaufa en donde estes a donde estés.",
+ "Cada mensaje tuyo me cambia la cara. Ya lo sabes, pero te lo repito jaja.",
+ "La distancia es solo un número en el mapa. Lo que siento no se mide en kilómetros, mua.",
+ "Hoy pensé en ti apenas abrí los ojos. Spoiler: pasa todos los días JAJAJJA.",
+ "Gracias por tu paciencia, por tu tiempo y por elegirme, TE ADORO.",
+ "Que hoy te salga todo bonito, y si algo sale mal, aquí estoy para escucharte, siempre estare.",
+ "Me encanta que seamos un equipo, aunque estemos en continentes distintos tii.",
+ "Tienes una forma de ver la vida que me inspira. Nunca la pierdas.",
+ "Hoy el cielo de Lima está gris, pero yo estoy de buen humor porque existes, que cursi soy.",
+ "Un día vamos a mirar atrás y sonreír de todo lo que construimos a la distancia, mua.",
+ "Tu risa debería ser declarada patrimonio de la humanidad.",
+ "Hoy quiero que te sientas querida, porque lo eres. Mucho.",
+ "Te debo mil abrazos. Llevo la cuenta, te los voy a cobrar todos.",
+ "Ciao, bella. Sí, estoy practicando mi italiano solo por ti.",
+ "Eres mi pensamiento favorito antes de dormir.",
+ "No importa cuán lejos estés: siempre vas a tener un lugar seguro en mí.",
+ "Hoy te quiero que sepas mi corazon woooo, que al final el amor ah llegado a miii.",
+ "Contigo las llamadas se pasan volando. muy rapido pasa el tiempo",
+ "Me gusta imaginarte paseando por Italia y pensar que esa chica tan linda es mi enamorada tii.",
+ "Si hoy te sientes cansada, date un respiro. Te lo mereces.",
+ "Gracias por existir justo en mi misma época. Qué suerte la mía la vd.",
+ "Eres de esas personas que hacen el mundo un poquito mejor y el mio mucho mejor.",
+ "Hoy te mando energía de la buena desde este lado del mundo.",
+ "Me haces querer ser una mejor versión de mí, lo sabes.",
+ "Hoy es noche buena, deberiamos estar en italia juntos, pasandola lindo.",
+ "Feliz navidad y feliz aniversario, yo seguramente estoy contigo o escribiendote mas codigo",
+ "Brenda, Bren, Brenchi... todos tus nombres me sacan una sonrisa.",
+ "Un día de estos, en vez de un mensaje, te voy a decir esto en persona.",
+ "Tienes un corazón enorme. Cuídalo, que es muy valioso.",
+ "Hoy quiero agradecerte por todas las veces que me escuchas.",
+ "El mejor plan del día siempre es hablar contigo.",
+ "Si la distancia fuera fácil, cualquiera la haría. Nosotros la hacemos bonita, se acaba el año.",
+ "Un nuevo año, y empezando contigo seguramente, te amo y siempre te amare.",
+ "Pensarte es mi pasatiempo favorito, te amo te amo te amo te amo te amo.",
+ "Eres fuerte, inteligente y preciosa. No lo olvides nunca por favor.",
+ "Hoy me acordé de algo que dijiste y me reí solo como loco.",
+ "No necesito un motivo para escribirte, pero tú eres el mejor motivo.",
+ "Ojalá hoy el día te trate con el mismo cariño con el que yo te pienso.",
+ "Me gusta que seas tú. Así, tal cual.",
+ "Cuando todo se pone difícil, pensar en ti me da paz.",
+ "Hoy te regalo un abrazo virtual de esos largos, sin apuro.",
+ "Eres mi casualidad más bonita.",
+ "Que tus clases de hoy pasen rápido y lleguen buenas noticias.",
+ "Contigo aprendí que la distancia se acorta con detalles.",
+ "Hoy te pienso más de lo normal. Y lo normal ya es bastante.",
+ "Cada día que pasa me alegra más haberte conocido.",
+ "Eres la notificación que más espero.",
+ "No sé cómo será el futuro, pero me gusta imaginarlo contigo cerca.",
+ "Hoy quiero que te mires al espejo y veas lo que yo veo: alguien increíble.",
+ "Lima te manda saludos. Bueno, en realidad soy yo, pero suena más bonito así.",
+ "Eres mi lugar tranquilo en medio de un día lleno de cosas.",
+ "Gracias por las risas, las conversaciones largas y las cortas también.",
+ "Hoy brilla, Bren. Aunque tú brillas siempre, sin esfuerzo.",
+ "Si algún día dudas de lo que vales, vuelve a leer este mensaje: vales muchísimo.",
+ "Me encanta escucharte hablar de lo que te apasiona.",
+ "Hoy te mando un beso que viaja seis horas en el tiempo para llegarte.",
+ "3 meses contigooo, seguro estamos peleando jaja, ya extrañandote desde lima.",
+ "Eres de las cosas más bonitas que me han pasado este año.",
+ "Ojalá hoy te encuentres con gente amable y momentos lindos.",
+ "Lo nuestro es como una brisa: suave, constante y siempre llega.",
+ "Hoy no tengo nada nuevo que decirte, solo lo de siempre: me encantas.",
+ "Me haces sentir que vale la pena esperar.",
+ "Que el estudio de hoy rinda y que la noche sea tranquila.",
+ "Eres mi persona favorita para contarle todo.",
+ "Hoy quiero recordarte que no estás sola: aquí estoy, siempre.",
+ "Una sonrisa tuya arregla cualquier día malo que yo tenga.",
+ "Me gusta cómo cuidas a los que quieres. Es algo muy tuyo.",
+ "Hoy te pienso con una canción de fondo y una sonrisa tonta en la cara.",
+ "La vida tiene formas raras de juntar a las personas. Me encanta la forma en que nos juntó.",
+ "Ánimo con todo hoy. Tú puedes con eso y con mucho más.",
+ "Eres mi buenos días y mi buenas noches favoritos.",
+ "Hoy te mando un pedacito de sol limeño... cuando salga, claro.",
+ "Gracias por ser tan tú conmigo.",
+ "Me encanta lo fácil que es hablar contigo de cualquier cosa.",
+ "Hoy quiero que sepas que te admiro. Por todo lo que haces y cómo lo haces.",
+ "Un día más contigo, aunque sea a la distancia, es un buen día.",
+ "Feliz aniversario, seguramente la estamos pasando en llamada jeje, beshitos.",
+ "Que hoy tengas un día leggero, como dicen por allá.",
+ "Tus mensajes son mi recarga de energía.",
+ "Hoy te pienso y se me olvida que hay un océano en medio.",
+ "Me encantas en todas tus versiones: la seria, la risueña, la cansada, la soñadora.",
+ "Si pudiera elegir otra vez, te elegiría otra vez.",
+ "Hoy cuídate mucho, que tienes a alguien aquí que te quiere bien.",
+ "Eres mi motivación silenciosa en los días largos de trabajo.",
+ "100 dias contigo amor, toy muy feliz, jeje seguro estamos chateando.",
+ "Hoy te deseo un día sin estrés y con mucho cariño.",
+ "Cada vez que hablamos descubro algo nuevo que me gusta de ti.",
+ "4 meses contigooo, que emocionn, ya somos mas maduros al parecer.",
+ "Hoy quiero que te rías mucho. Si no encuentras motivo, llámame por favor.",
+ "Me gusta que tengamos nuestras propias palabras, nuestras bromas, nuestro mundo.",
+ "Tú y yo contra la diferencia horaria. Vamos ganando.",
+ "Hoy pensé en lo afortunado que soy. Adivina por quién.",
+ "Que nada te quite la ilusión hoy. Ni el cansancio, ni la rutina.",
+ "Eres preciosa por fuera, pero lo que tienes por dentro es todavía mejor.",
+ "Hoy te mando un \"te quiero\" de esos que se dicen bajito pero se sienten fuerte.",
+ "Gracias por hacer espacio para mí en tu vida tan ocupada.",
+ "Me encanta pensar en todas las cosas que todavía nos faltan por vivir.",
+ "Hoy sé amable contigo misma. Te lo pido yo.",
+ "Hoy es el dia de la mujer, estoy muy orgulloso de ti, no te rindas, tu puedes!.",
+ "Ojalá este mensaje te encuentre sonriendo. Y si no, que te haga sonreír.",
+ "Me haces sentir en casa aunque estés al otro lado del mundo.",
+ "Hoy te escribo solo para que sepas que estás en mi cabeza. Todo el día.",
+ "Tu forma de ser hace que todo valga la pena.",
+ "Hoy celebro algo pequeño: que nos tenemos.",
+ "Eres como mi canción favorita: nunca me canso de ti.",
+ "Que tu día esté lleno de pequeñas victorias.",
+ "Contigo hasta los días grises tienen color.",
+ "Hoy te abrazo con el pensamiento, fuerte y largo.",
+ "Me gusta cómo me miras en las videollamadas. Se nota todo.",
+ "Tienes una luz que se nota incluso a través de una pantalla.",
+ "Hoy quiero agradecerte por confiar en mí.",
+ "Eres mi tema de conversación favorito, aunque no se lo cuente a todos.",
+ "Que hoy te vaya increíble, y si no, mañana te espero con otro mensaje.",
+ "Mi lugar favorito es cualquier conversación contigo.",
+ "Hoy te recuerdo que eres suficiente, tal y como eres.",
+ "5 meses, el tiempo pasa volando, seguramente ya estamos planeando nuestro futuro.",
+ "Eres mi casualidad, mi elección y mi alegría.",
+ "Hoy te pienso desde la tienda, entre clientes y iPhones. Siempre te cuelas.",
+ "Gracias por cada \"buenas noches\" que me das, aunque para mí todavía sea de tarde.",
+ "Me haces sonreír sin siquiera intentarlo.",
+ "Hoy quiero que sepas que me importas. Mucho más de lo que digo.",
+ "Eres la razón por la que reviso el celular tantas veces.",
+ "Te deseo feliz cumpleaños, seguramente estoy a tu lado pasandola juntos, jeje te amo.",
+ "Hoy te mando fuerza, calma y un poquito de mi cariño en cada palabra.",
+ "Me gusta que lo nuestro sea sencillo y sincero.",
+ "Eres la mejor parte de mis días, incluso de los más ocupados.",
+ "Hoy cierra los ojos un segundo e imagina un abrazo mío. Ese es real.",
+ "Tienes algo que hace que quiera contarte todo lo que me pasa.",
+ "Que tu día huela a café, a pan recién hecho y a cosas bonitas.",
+ "Me gusta saber que hay alguien en Italia pensando en mí. Y que esa alguien eres tú.",
+ "Hoy brindo con agua, pero brindo por ti.",
+ "Eres mi motivo para mejorar cada día.",
+ "Gracias por tu cariño. Lo noto, lo guardo y lo valoro.",
+ "Hoy quiero que hagas algo que te guste solo por ti.",
+ "Eres mi persona. Así de simple.",
+ "Que hoy sea un día de esos que dan ganas de repetir.",
+ "Contigo hasta el silencio en llamada se siente cómodo.",
+ "Hoy te escribo con la misma ilusión que el primer día.",
+ "Me encanta tu manera de ver las cosas, tan tuya, tan bonita.",
+ "Eres un pedacito de felicidad que encontré sin buscar.",
+ "Hoy te pienso y sonrío. Así, sin explicación.",
+ "Ánimo, Bren. Cada esfuerzo que haces hoy te acerca a tus sueños.",
+ "Tú, yo y un mapa que pronto se va a quedar chiquito.",
+ "Hoy quiero recordarte lo bonito que es quererte.",
+ "Gracias por enseñarme que la distancia no es un obstáculo, es una prueba que estamos pasando juntos.",
+ "Eres mi alegría favorita.",
+ "MEDIOOO AÑO CONTIGO MI AMORCHITO, MI PRINCESA JAJAJA, QUE EMOCION ESTAR A TU LADO.",
+ "Me gusta cuando me cuentas tu día con todos los detalles.",
+ "Hoy te mando un abrazo con olor a Lima.",
+ "Eres la mejor decisión que mi corazón ha tomado.",
+ "Ojalá pudiera pausar el tiempo cada vez que hablamos.",
+ "Hoy no te olvides de comer bien y tomar agua. Lo digo porque te quiero.",
+ "Eres hermosa cuando te ríes, cuando piensas y cuando te enojas también (un poquito).",
+ "Me haces sentir afortunado todos los días.",
+ "Hoy quiero que te sientas abrazada aunque yo esté lejos.",
+ "Contigo cada día es una página nueva que me gusta escribir.",
+ "Eres mi sol de Italia.",
+ "Que hoy encuentres tiempo para descansar y soñar un poco.",
+ "Me encanta que estemos construyendo algo bonito, paso a paso.",
+ "Hoy pensé en el día en que por fin nos veamos. Me puse nervioso solo de imaginarlo.",
+ "Gracias por ser tan paciente con mis horarios locos.",
+ "Eres la mejor razón para sonreír a las cinco de la mañana.",
+ "Hoy te deseo suerte en todo lo que hagas. Aunque no la necesites.",
+ "Me gusta que me hagas reír incluso cuando estoy cansado.",
+ "Eres un sueño que se siente muy real.",
+ "Hoy te mando un mensaje corto con un sentimiento largo: te quiero.",
+ "Ojalá hoy el tiempo pase rápido hasta que podamos hablar.",
+ "Tu felicidad me importa muchísimo. Cuídala.",
+ "Hoy quiero que sepas que estás haciendo un gran trabajo.",
+ "Eres de esas personas que dejan huella.",
+ "Me encanta saber que existes en algún lugar de Italia, sonriendo.",
+ "Hoy sonríe por mí, que yo sonrío por ti desde aquí.",
+ "Contigo descubrí que se puede extrañar a alguien y ser feliz al mismo tiempo.",
+ "Eres mi momento favorito del día, todos los días.",
+ "Que hoy te pasen cosas lindas, y que me las cuentes después.",
+ "Me haces sentir que todo va a salir bien.",
+ "7 meses contigo, sigo enamorado de ti desde la primera vez que te conoci.",
+ "Eres el mejor capítulo de mi año.",
+ "Gracias por elegir quedarte, cada día.",
+ "Hoy quiero llenarte el día de cariño, aunque sea con palabras.",
+ "Me encantas más de lo que sé explicar.",
+ "Eres mi \"ojalá\" que se hizo realidad.",
+ "Que hoy tengas la energía que necesitas y la calma que mereces.",
+ "Contigo me siento yo mismo. Eso no tiene precio.",
+ "Hoy te pienso con cariño, con ganas y con ilusión, 200 dias contigoo.",
+ "Eres mi brisa en los días calurosos y mi abrigo en los fríos.",
+ "Me gusta que seamos tan distintos y tan parecidos a la vez.",
+ "Hoy te mando un beso en la frente, de esos que dicen \"aquí estoy\".",
+ "Ojalá hoy te sientas orgullosa de ti. Yo lo estoy.",
+ "Eres mi parte favorita de la vida ahora mismo.",
+ "Hoy me di cuenta de que ya no sé imaginar mis días sin ti.",
+ "Gracias por tu forma tan bonita de quererme.",
+ "Que tu día esté lleno de luz, como tú.",
+ "Me encanta cómo dices mi nombre.",
+ "Hoy quiero que descanses bien y sueñes bonito.",
+ "Eres esa persona que hace que la espera se sienta corta.",
+ "Contigo cada \"buenos días\" tiene sentido.",
+ "Hoy te pienso mientras miro el mar de Lima. Al otro lado, en algún lugar, estás tú.",
+ "Eres mi tesoro a la distancia.",
+ "Que hoy no te falte una razón para sonreír. Aquí te dejo una: te quiero.",
+ "Me gusta cuando me cuentas tus planes. Me gusta más si estoy en ellos.",
+ "Hoy te mando toda la paciencia y la fuerza del mundo.",
+ "Eres mi hogar en forma de persona.",
+ "Gracias por estar, incluso cuando todo está desordenado.",
+ "Hoy quiero que te sientas la chica más querida del mundo. Porque para mí lo eres.",
+ "Me encanta lo que somos y lo que vamos a ser.",
+ "Eres mi calma después de un día de locos.",
+ "Hoy te pienso como siempre, pero con un poquito más de gana, felices 8 meses, mua mua.",
+ "Ojalá este mensaje te haga el día un poquito más ligero.",
+ "Eres de las personas que uno quiere cuidar para siempre.",
+ "Hoy te recuerdo que puedes contar conmigo para lo que sea.",
+ "Me haces creer en las cosas bonitas otra vez.",
+ "Eres mi casualidad favorita convertida en costumbre.",
+ "Que hoy todo fluya, como una brisa = brenda + cris.",
+ "Contigo aprendí a valorar cada minuto de llamada.",
+ "Hoy te escribo para decirte que estoy aquí, pensando en ti, como siempre.",
+ "Eres mi motivo para levantarme con ganas.",
+ "Gracias por llenar mis días de cosas bonitas.",
+ "Hoy quiero que te consientas un poquito. Te lo has ganado.",
+ "Me encanta imaginar nuestras futuras aventuras juntos.",
+ "Eres mi mejor noticia de cada día.",
+ "Que hoy te sientas querida, cuidada y valorada.",
+ "Contigo todo tiene un poquito más de sentido.",
+ "Hoy te mando un abrazo de esos que curan todo.",
+ "Eres mi alegría a seis horas de distancia.",
+ "Me gusta saber que, aunque estemos lejos, vamos en la misma dirección.",
+ "Hoy quiero recordarte que eres increíble. Por si se te olvidó.",
+ "Gracias por cada risa compartida.",
+ "Eres mi persona favorita en todos los husos horarios.",
+ "Que hoy te pase algo que te haga sonreír sin razón.",
+ "Me encanta que seas parte de mi vida.",
+ "Hoy te pienso más fuerte, a ver si lo sientes allá.",
+ "Eres la mejor parte de mi rutina.",
+ "Ojalá hoy te sientas tan feliz como me haces sentir a mí.",
+ "Contigo los días tienen otro brillo.",
+ "Hoy te mando un \"buongiorno\" con acento peruano.",
+ "Eres mi fuerza cuando estoy cansado.",
+ "Gracias por ser mi lugar favorito para descansar el corazón, felices 9 meses, sigo aqui contigo, beshito.",
+ "Hoy quiero que pienses en algo bonito que te haya pasado esta semana. Yo pienso en ti.",
+ "Me encanta lo que siento cuando hablamos.",
+ "Eres esa persona que uno no se cansa de conocer jeje, felices fiestas patrias mi preciosa.",
+ "Que hoy te vaya tan bien como te mereces, o sea, increíble.",
+ "Contigo no existen los días aburridos.",
+ "Hoy te pienso con una taza de café en la mano y una sonrisa en la cara.",
+ "Eres mi suerte en este mundo.",
+ "Ojalá pudiera estar ahí para verte sonreír en persona.",
+ "Me haces sentir querido de una forma muy bonita.",
+ "Hoy quiero recordarte que todo lo bueno que te pasa, te lo mereces.",
+ "Eres mi sueño favorito, y estoy despierto.",
+ "Gracias por darle color a mis días.",
+ "Hoy te mando cariño suficiente para todo el día.",
+ "Me encanta tu forma de quererme a la distancia.",
+ "Eres mi paz y mi alegría al mismo tiempo.",
+ "Que hoy encuentres belleza en los detalles pequeños.",
+ "Contigo aprendí que querer bonito es posible.",
+ "Hoy te pienso mientras el día empieza aquí y el tuyo ya va por la mitad.",
+ "Eres mi motivo de orgullo.",
+ "Ojalá hoy te sientas tan linda como te veo yo.",
+ "Me gusta que me cuentes tus miedos y tus sueños. Los cuido todos.",
+ "Hoy quiero que sepas que me haces muy feliz.",
+ "Eres un abrazo en forma de persona.",
+ "Gracias por cada momento, por pequeño que sea.",
+ "Hoy te deseo un día lleno de cosas buenas y gente buena.",
+ "Me encanta que nuestros días, aunque distintos, terminen juntos en una llamada.",
+ "Eres mi mejor costumbre.",
+ "Que hoy tengas un ratito de calma solo para ti.",
+ "Contigo la vida se siente más ligera.",
+ "Hoy te mando un mensaje lleno de cariño y con un poquito de nostalgia por no tenerte cerca.",
+ "Eres mi lugar seguro, felices 10 meses, te amo mucha intensidad",
+ "Ojalá hoy te pasen tantas cosas bonitas como las que yo pienso de ti.",
+ "Me haces querer contar los días que faltan para verte.",
+ "Hoy quiero que te sientas orgullosa de lo lejos que has llegado.",
+ "Eres la mejor parte de este año.",
+ "Gracias por quererme como soy.",
+ "Hoy te pienso con ganas de abrazarte muy fuerte.",
+ "Me encanta lo bonito que es lo nuestro.",
+ "Eres mi sonrisa de todos los días.",
+ "Que hoy sea un día tranquilo y lleno de amor.",
+ "Contigo todo vale la pena.",
+ "Hoy te mando un beso desde Lima hasta donde estés.",
+ "Eres mi alegría constante.",
+ "Ojalá hoy te sientas acompañada, porque lo estás.",
+ "Me gusta saber que estás ahí, aunque sea lejos.",
+ "Hoy quiero recordarte que eres muy especial para mí.",
+ "Eres mi casualidad más afortunada.",
+ "Gracias por cada día a tu lado, aunque sea a la distancia.",
+ "Hoy te pienso y se me arregla el día.",
+ "Me encanta lo que somos juntos.",
+ "Eres mi persona favorita para compartir la vida.",
+ "Que hoy todo te salga bonito.",
+ "Contigo hasta las despedidas se sienten como un \"hasta pronto\".",
+ "Hoy te mando un abrazo enorme y un beso grande.",
+ "Eres mi mejor elección.",
+ "Ojalá hoy te des cuenta de lo mucho que vales.",
+ "Me haces muy feliz, Brenchii.",
+ "Hoy quiero que sepas que pienso en ti a cada rato.",
+ "Eres la razón de muchas de mis sonrisas.",
+ "Gracias por existir, por quedarte y por quererme.",
+ "Hoy te deseo un día precioso, como tú.",
+ "11 MESES AMORRRR, CASI 1 AÑO DE ATU LADOOO, LLOROOOO HELP, jaja me encantas.",
+ "Eres mi corazón viajando a Italia todos los días.",
+ "Que hoy te sientas tan querida como eres.",
+ "Contigo el futuro se ve bonito.",
+ "Hoy te pienso con todo el cariño del mundo.",
+ "Eres mi mejor historia.",
+ "Ojalá este año juntos sea solo el comienzo.",
+ "Me gusta cómo hemos crecido juntos estos meses.",
+ "Hoy quiero agradecerte por cada día de este año.",
+ "Eres mi persona, mi brenchi, mi alegría.",
+ "Gracias por un año lleno de llamadas, risas y cariño.",
+ "Hoy te imagino caminando por calles con historia y pienso que la historia más bonita es la nuestra.",
+ "Me encanta que me mandes fotos de tu día. Es como estar un ratito contigo.",
+ "Hoy quiero que respires hondo y sepas que todo va a estar bien.",
+ "Eres mi primera sonrisa de la mañana.",
+ "Que hoy te toque un día fácil. Y si no, que tengas fuerzas para todo.",
+ "Contigo hasta los lunes tienen algo bonito.",
+ "Hoy te pienso con la misma emoción de la primera llamada.",
+ "Eres mi suspiro favorito.",
+ "Gracias por hacerme sentir importante.",
+ "Hoy te mando cariño en cantidades industriales.",
+ "Me gusta cuando me dices que me extrañas. Yo también, más.",
+ "Eres mi plan favorito para el futuro.",
+ "Que hoy tus preocupaciones pesen menos.",
+ "Contigo aprendí que el amor también se escribe.",
+ "Hoy quiero que te sientas libre, feliz y en paz.",
+ "Eres mi rincón tranquilo en el mundo.",
+ "Ojalá hoy alguien te haga reír tanto como tú me haces reír a mí.",
+ "Me encantas cuando hablas sin parar de algo que te emociona.",
+ "Hoy te recuerdo que estoy de tu lado, siempre.",
+ "Hoy es un dia muy especial, cumplimos o estaremos cumpliendo 1 año juntos, jaja ojala siga contigo, me da ganas de llorar ahora que estoy escribiendo esto",
+ "Gracias por tu ternura.",
+ "Hoy te mando un pensamiento bonito para que lo guardes en el bolsillo.",
+ "Me gusta lo que eres y lo que me haces sentir.",
+ "Eres mi motivo para creer en lo bonito.",
+ "Que hoy el día te sonría de vuelta.",
+ "Contigo todo es más divertido.",
+ "Hoy te pienso mientras atiendo, mientras como y mientras camino. O sea, todo el día.",
+ "Eres mi alegría más sincera.",
+ "Ojalá pudiera mandarte este mensaje con un abrazo incluido.",
+ "Me haces sentir que estoy en el lugar correcto.",
+ "Hoy quiero decirte gracias por todo lo que eres.",
+ "Eres mi mejor pensamiento.",
+ "Que hoy te sientas feliz de ser quien eres.",
+ "Contigo la distancia se siente más pequeña cada día.",
+ "Hoy te mando una sonrisa enorme desde Perú.",
+ "Eres mi ilusión de cada mañana.",
+ "Gracias por compartir tu mundo conmigo.",
+ "Hoy quiero que sepas que lo nuestro me hace muy feliz.",
+ "Eres mi persona bonita.",
+ "Hoy te mando el penúltimo mensaje con la misma ilusión que el primero.",
+ "365 días después, sigo pensando lo mismo que el primer día: qué suerte tenerte. Te quiero, Brenchi, y que sepas que siempre lo hare y estaras en mi corazon toda la vida"
+];
+// ===========================
+
+const DIA_MS = 86400000;
+const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+
+function hoyLocal(){ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function indiceDe(fecha){ return Math.round((fecha - INICIO) / DIA_MS); }
+const pad = n => String(n).padStart(2,'0');
+
+const hoyIdx = Math.max(0, indiceDe(hoyLocal()));
+let actual = hoyIdx;
+
+const $ = id => document.getElementById(id);
+
+function mostrar(idx, animar){
+  const fecha = new Date(INICIO.getTime() + idx*DIA_MS);
+  const clave = pad(fecha.getMonth()+1) + '-' + pad(fecha.getDate());
+  const numero = (idx % 365) + 1;
+  const texto = ESPECIALES[clave] || MENSAJES[idx % 365];
+  const render = () => {
+    $('msg').textContent = texto;
+    $('dayNum').textContent = 'Día ' + numero;
+    $('date').textContent = dias[fecha.getDay()] + ', ' + fecha.getDate() + ' de ' + meses[fecha.getMonth()] + ' de ' + fecha.getFullYear();
+    $('bar').style.width = (numero/365*100) + '%';
+    $('prev').disabled = idx <= 0;
+    $('next').disabled = idx >= hoyIdx;   // no se pueden ver mensajes futuros
+    $('today').disabled = idx === hoyIdx;
+    $('msg').classList.remove('fade');
+  };
+  if(animar){ $('msg').classList.add('fade'); setTimeout(render, 300); } else render();
+}
+
+function cuentaRegresiva(){
+  const ahora = new Date();
+  const manana = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()+1);
+  const s = Math.floor((manana-ahora)/1000);
+  const h = Math.floor(s/3600), m = Math.floor(s%3600/60);
+  $('countdown').textContent = 'Próximo mensaje en ' + h + ' h ' + pad(m) + ' min';
+  // Si cambió el día con la página abierta, recarga para mostrar el nuevo
+  if(indiceDe(hoyLocal()) !== hoyIdx) location.reload();
+}
+
+$('prev').onclick = () => { if(actual>0){ actual--; mostrar(actual,true); } };
+$('next').onclick = () => { if(actual<hoyIdx){ actual++; mostrar(actual,true); } };
+$('today').onclick = () => { actual = hoyIdx; mostrar(actual,true); };
+
+// brisa decorativa
+const w = $('wind');
+for(let i=0;i<9;i++){
+  const s=document.createElement('span');
+  s.style.top=(Math.random()*100)+'%';
+  s.style.width=(80+Math.random()*160)+'px';
+  s.style.animationDuration=(7+Math.random()*8)+'s';
+  s.style.animationDelay=(Math.random()*10)+'s';
+  w.appendChild(s);
+}
+
+mostrar(actual,false);
+cuentaRegresiva();
+setInterval(cuentaRegresiva, 30000);
+</script>
+</body>
+</html>
